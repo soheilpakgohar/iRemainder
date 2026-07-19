@@ -1,0 +1,74 @@
+// iRemainder — domain model
+// See CONTEXT.md for the glossary and docs/adr/ for the key decisions.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A person who buys from the store on installments.
+// Has one or more Plans; each Plan generates N Installments.
+model Customer {
+  id        String   @id @default(cuid())
+  fullName  String
+  phone     String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plans Plan[]
+
+  @@index([fullName])
+}
+
+// A single installment agreement: total amount split into N payments
+// spaced `intervalDays` apart starting `startDate`. Stored once; the
+// Installment rows are derived from it via auto-generation.
+model Plan {
+  id                String   @id @default(cuid())
+  customerId        String
+  totalAmount       Int // Rial
+  installmentsCount Int
+  startDate         DateTime // first due date (ISO, noon UTC)
+  intervalDays      Int // spacing between installments (default 30 = monthly)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  installments Installment[]
+}
+
+// One scheduled payment. `number` is 1..installmentsCount.
+// dueDate is ISO (noon UTC). The calendar dots and the call list key off
+// (dueDate, paid): a day shows a dot iff >= 1 unpaid installment is due.
+model Installment {
+  id     String @id @default(cuid())
+  planId String
+  number Int // 1..installmentsCount
+  dueDate DateTime // ISO, noon UTC to dodge TZ flips
+  amount Int // per-installment Rial
+  paid Boolean @default(false)
+  paidAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  // The composite that powers both the dot query and the call list.
+  @@index([dueDate, paid])
+  @@index([planId])
+}
+
+// Singleton row (id = "singleton") holding app-wide settings.
+// Currently just the SMS template, but structured to grow.
+model Setting {
+  id          String @id
+  smsTemplate String
+  updatedAt   DateTime @updatedAt
+}

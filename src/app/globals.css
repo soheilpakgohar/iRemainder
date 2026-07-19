@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────────────────
+   iRemainder — design system
+   Apple-style materials, system theme (prefers-color-scheme),
+   RTL, reduced-motion / reduced-transparency / increased-contrast.
+   ─────────────────────────────────────────────────────────── */
+
+/* System dark mode: Tailwind v4's `dark:` variant defaults to the
+   prefers-color-scheme media query — no @custom-variant needed, no JS
+   toggle, so there's no theme flash on load. Our CSS variables below
+   switch in the same media query to keep colors in sync. */
+
+:root {
+  /* Light, paper-like surfaces. */
+  --bg: #f2f2f7; /* iOS grouped-background grey */
+  --bg-elevated: #ffffff;
+  --bg-sunken: #e5e5ea;
+  --fg: #1c1c1e;
+  --fg-secondary: #3c3c43;
+  --fg-tertiary: #8e8e93;
+  --separator: rgba(60, 60, 67, 0.18);
+  --separator-opaque: #d1d1d6;
+
+  --accent: #0a84ff; /* iOS blue (dark-tuned) reads well on both themes */
+  --accent-fg: #ffffff;
+
+  --danger: #ff3b30;
+  --success: #34c759;
+  --warning: #ff9f0a;
+
+  /* Translucent material (apple-design §12). Single variable that swaps
+     in the dark media query — no .dark class needed (we use system theme). */
+  --material: rgba(255, 255, 255, 0.72);
+
+  --radius: 14px;
+  --radius-lg: 20px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.18);
+}
+
+@theme {
+  /* Surface tokens renamed from `bg-*` to `surface*` so the auto-generated
+     utilities (`bg-surface-elevated`, etc.) don't collide with the `bg-`
+     utility prefix. The raw CSS vars keep their --bg names for clarity. */
+  --color-surface: var(--bg);
+  --color-surface-elevated: var(--bg-elevated);
+  --color-surface-sunken: var(--bg-sunken);
+  --color-fg: var(--fg);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-tertiary: var(--fg-tertiary);
+  --color-separator: var(--separator);
+  --color-separator-opaque: var(--separator-opaque);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --radius-card: var(--radius);
+  --radius-sheet: var(--radius-lg);
+  --shadow-card: var(--shadow-card);
+  --shadow-sheet: var(--shadow-sheet);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --bg-elevated: #1c1c1e;
+    --bg-sunken: #0a0a0a;
+    --fg: #ffffff;
+    --fg-secondary: #ebebf5;
+    --fg-tertiary: #98989f;
+    --separator: rgba(84, 84, 88, 0.6);
+    --separator-opaque: #38383a;
+
+    --accent: #0a84ff;
+    --danger: #ff453a;
+    --success: #30d158;
+    --warning: #ffd60a;
+
+    /* Dark material: near-black, slightly translucent. Higher alpha than
+       the light version so text stays legible over busy content. */
+    --material: rgba(28, 28, 30, 0.72);
+
+    --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.5), 0 8px 24px rgba(0, 0, 0, 0.6);
+    --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.6);
+  }
+}
+
+* {
+  border-color: var(--separator);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  /* System font (apple-design §15) — ships optical sizing + Persian support. */
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Vazirmatn", "Segoe UI",
+    system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01";
+  /* Smooth theme transitions (apple-design §14 — avoid abrupt brightness jumps). */
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+/* Persian digits render naturally with the right font features. */
+:lang(fa) {
+  font-feature-settings: "ss01", "cv01";
+}
+
+/* Large display text: tighten tracking (apple-design §15). */
+.display {
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+/* Translucent chrome — nav bars, toolbars (apple-design §12).
+   Uses --material, which swaps value via the dark media query above. */
+.material {
+  background: var(--material);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Active feedback on every tappable thing (apple-design §1). */
+.pressable {
+  transition: transform 0.1s ease-out, background-color 0.15s ease;
+}
+.pressable:active {
+  transform: scale(0.97);
+}
+
+/* Scroll edge fade instead of a hard divider under sticky chrome. */
+.scroll-edge-top {
+  mask-image: linear-gradient(to bottom, transparent 0, black 12px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 12px);
+}
+
+/* ── Accessibility: three independent signals (apple-design §14) ── */
+
+/* Reduced motion: cross-fade, no slides/springs/overshoot. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Reduced transparency: make materials solid/frostier. */
+@media (prefers-reduced-transparency: reduce) {
+  .material {
+    background: var(--bg-elevated);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Increased contrast: near-solid backgrounds + defined borders. */
+@media (prefers-contrast: more) {
+  :root {
+    --separator: rgba(0, 0, 0, 0.55);
+    --fg-secondary: var(--fg);
+    --fg-tertiary: var(--fg-secondary);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --separator: rgba(255, 255, 255, 0.55);
+    }
+  }
+  .material {
+    background: var(--bg-elevated);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Hide scrollbars on horizontal scrollers but keep scrollability. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
