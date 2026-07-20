@@ -105,6 +105,12 @@ export function currentJalaliYear(): number {
   return dayjs().calendar("jalali").locale("fa").year();
 }
 
+/** Current Jalali month index, 0-based (0 = Farvardin). For the mobile
+ *  single-month view to open on "today's month". */
+export function currentJalaliMonth(): number {
+  return dayjs().calendar("jalali").locale("fa").month();
+}
+
 /** Current Jalali year + month names for header display. */
 export function currentJalaliMonthName(): string {
   const months = [

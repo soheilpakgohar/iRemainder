@@ -1,38 +1,67 @@
 "use client";
 
-import { useState, useOptimistic } from "react";
+import { useState, useOptimistic, useEffect, useCallback } from "react";
 import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/solid";
 import { MiniMonth } from "./MiniMonth";
 import { DaySheet } from "./DaySheet";
 import { PERSIAN_MONTHS, toPersianDigits } from "@/lib/jalali";
+import { fetchYearCountsAction } from "@/app/actions/installments";
 
 type Counts = Map<string, number>;
 
 /**
- * Client component holding the selected Jalali year, the unpaid-due counts
- * (from the server), and the tapped day (drives the sheet).
+ * The calendar host. Holds the selected Jalali year + month, the unpaid-due
+ * counts per year (refetched on year change so every navigated-to year shows
+ * correct dots — the initial page load only fetched the current year), and
+ * the tapped day (drives the sheet).
  *
- * When an installment is marked paid, we optimistically remove one from
- * that day's count — so the dot disappears the instant the last unpaid
- * row flips, before the server round-trip (apple-design §3).
+ * Layout:
+ *  - Mobile: ONE big month with prev/next month nav (matches the reference).
+ *  - md+: all 12 months in a responsive grid (2 / 3 / 4 columns).
+ *
+ * When an installment is marked paid, we optimistically remove one from that
+ * day's count so the dot disappears before the server round-trip (apple-design §3).
  */
 export function YearOverview({
   initialYear,
+  initialMonth,
   initialCounts,
   todayIso,
 }: {
   initialYear: number;
+  initialMonth: number;
   initialCounts: Counts;
   todayIso: string;
 }) {
   const [year, setYear] = useState(initialYear);
-  const [selectedIso, setSelectedIso] = useState<string | null>(null);
+  const [month, setMonth] = useState(initialMonth);
 
-  // Optimistic dot counts. Decrement on each paid toggle; drop the day at 0.
+  // Counts cached per year so back-navigation is instant after first fetch.
+  const [countsByYear, setCountsByYear] = useState<Record<number, Counts>>({
+    [initialYear]: initialCounts,
+  });
+  const [loadingYear, setLoadingYear] = useState<number | null>(null);
+
+  // Refetch counts when navigating to a year we haven't loaded yet.
+  useEffect(() => {
+    if (countsByYear[year]) return;
+    setLoadingYear(year);
+    fetchYearCountsAction(year)
+      .then((record) => {
+        const map = new Map(Object.entries(record));
+        setCountsByYear((prev) => ({ ...prev, [year]: map }));
+      })
+      .finally(() => setLoadingYear(null));
+  }, [year, countsByYear]);
+
+  const currentCounts = countsByYear[year] ?? new Map<string, number>();
+
+  // Optimistic dot counts for the currently-viewed year. Decrement on each
+  // paid toggle; drop the day key at 0.
   const [optimisticCounts, mutateOptimistic] = useOptimistic<
     Counts,
     { iso: string }
-  >(initialCounts, (state, action) => {
+  >(currentCounts, (state, action) => {
     const next = new Map(state);
     const cur = next.get(action.iso) ?? 0;
     if (cur <= 1) next.delete(action.iso);
@@ -40,38 +69,78 @@ export function YearOverview({
     return next;
   });
 
-  const goToYear = (delta: number) => setYear((y) => y + delta);
+  const [selectedIso, setSelectedIso] = useState<string | null>(null);
+
+  // Step by one month, rolling the year over at Farvardin/Esfand boundaries.
+  const goToMonth = useCallback((delta: number) => {
+    setMonth((prevMonth) => {
+      let next = prevMonth + delta;
+      if (next < 0) {
+        setYear((y) => y - 1);
+        next = 11;
+      } else if (next > 11) {
+        setYear((y) => y + 1);
+        next = 0;
+      }
+      return next;
+    });
+  }, []);
 
   // Called by DaySheet after a successful paid toggle.
   const handlePaidChange = (iso: string, becamePaid: boolean) => {
     if (becamePaid) mutateOptimistic({ iso });
   };
 
+  const monthLabel = PERSIAN_MONTHS[month];
+
   return (
     <>
-      {/* Year switcher */}
-      <div className="flex items-center justify-center gap-6 mb-4">
+      {/* Month + year nav (mobile shows this prominently as the single-month header) */}
+      <div className="flex items-center justify-between gap-2 mb-4">
         <button
-          onClick={() => goToYear(-1)}
+          onClick={() => goToMonth(-1)}
           className="pressable p-2 -m-2 text-fg-tertiary"
-          aria-label="سال قبل"
+          aria-label="ماه قبل"
         >
-          <ChevronRightIcon className="w-5 h-5" />
+          <ChevronRightIcon className="w-6 h-6" />
         </button>
-        <span className="text-[22px] font-bold display min-w-[3ch] text-center">
-          {toPersianDigits(year)}
-        </span>
+        <div className="text-center min-w-0">
+          <div className="text-[20px] md:text-[18px] font-bold display leading-tight my-1.5">
+            {monthLabel}
+          </div>
+          <div className="text-[13px] text-fg-tertiary leading-tight">
+            {toPersianDigits(year)}
+          </div>
+        </div>
         <button
-          onClick={() => goToYear(1)}
+          onClick={() => goToMonth(1)}
           className="pressable p-2 -m-2 text-fg-tertiary"
-          aria-label="سال بعد"
+          aria-label="ماه بعد"
         >
-          <ChevronLeftIcon className="w-5 h-5" />
+          <ChevronLeftIcon className="w-6 h-6" />
         </button>
       </div>
 
-      {/* 12 months in a 2-column grid */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Mobile: single big month (the one selected by month nav). */}
+      <div className="md:hidden">
+        {loadingYear === year ? (
+          <div className="rounded-card bg-surface-elevated p-8 text-center text-fg-tertiary text-[14px] shadow-card">
+            در حال بارگذاری…
+          </div>
+        ) : (
+          <MiniMonth
+            jalaliYear={year}
+            jalaliMonth={month}
+            monthName={monthLabel}
+            unpaidCounts={optimisticCounts}
+            todayIso={todayIso}
+            onSelectDay={setSelectedIso}
+          />
+        )}
+      </div>
+
+      {/* md+: all 12 months in a responsive grid. */}
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {PERSIAN_MONTHS.map((name, monthIdx) => (
           <MiniMonth
             key={monthIdx}

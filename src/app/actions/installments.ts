@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireOperator } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getInstallmentsForDay } from "@/lib/queries";
+import { getInstallmentsForDay, getUnpaidDueCounts } from "@/lib/queries";
 import type { InstallmentWithRelations } from "@/lib/queries";
 import { dayjs } from "@/lib/jalali";
 
@@ -40,4 +40,20 @@ export async function togglePaidAction(id: string, paid: boolean): Promise<void>
     data: { paid, paidAt: paid ? new Date() : null },
   });
   revalidatePath("/", "page");
+}
+
+/**
+ * Refetch unpaid-due counts for a Jalali year. Called from the client when
+ * the operator navigates to a different year/month, so dots stay correct on
+ * every navigated-to year (the initial page load only fetches current year).
+ *
+ * Returns a plain Record (not a Map) because server-action results cross
+ * the wire as JSON. The client reconstructs the Map.
+ */
+export async function fetchYearCountsAction(
+  year: number,
+): Promise<Record<string, number>> {
+  await requireOperator();
+  const counts = await getUnpaidDueCounts(year);
+  return Object.fromEntries(counts);
 }

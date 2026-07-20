@@ -37,6 +37,11 @@
   --radius-lg: 20px;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
   --shadow-sheet: 0 -8px 40px rgba(0, 0, 0, 0.18);
+
+  /* App content max-width — phone-narrow on mobile, widens at lg/xl.
+     All chrome (TopBar, bottom nav, page main) reads this so they stay
+     in sync; the DaySheet opts out and stays phone-sized on desktop. */
+  --container-app: 28rem; /* max-w-md on mobile */
 }
 
 @theme {
@@ -60,6 +65,15 @@
   --radius-sheet: var(--radius-lg);
   --shadow-card: var(--shadow-card);
   --shadow-sheet: var(--shadow-sheet);
+
+  /* Font-weight tokens. IRANSansX ships only 400 + 700, so map the
+     intermediate Tailwind weights (500 medium, 600 semibold) down to 400
+     rather than letting the browser synthesize faux-bold. `font-bold` (700)
+     keeps the real Bold face. Override the Tailwind default weight tokens
+     so every `font-medium`/`font-semibold` in the app resolves to 400. */
+  --font-weight-medium: 400;
+  --font-weight-semibold: 400;
+  --font-weight-bold: 700;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -87,6 +101,19 @@
   }
 }
 
+/* App container widens on larger screens so the calendar can show more
+   months per row. Mobile stays phone-narrow (one big month). */
+@media (min-width: 1024px) {
+  :root {
+    --container-app: 72rem; /* lg: max-w-6xl-ish */
+  }
+}
+@media (min-width: 1280px) {
+  :root {
+    --container-app: 80rem; /* xl: max-w-7xl-ish */
+  }
+}
+
 * {
   border-color: var(--separator);
 }
@@ -99,10 +126,13 @@ body {
 body {
   background: var(--bg);
   color: var(--fg);
-  /* System font (apple-design §15) — ships optical sizing + Persian support. */
+  /* IRANSansX (loaded via next/font/local → --font-sans) as the primary
+     family, with a system-font fallback stack while it loads or if it
+     fails. The fallbacks are Persian-capable system fonts. */
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Vazirmatn", "Segoe UI",
-    system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+    var(--font-sans), -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Vazirmatn", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: "ss01";
@@ -129,6 +159,14 @@ body {
   background: var(--material);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* Shared content max-width. Phone-narrow on mobile, widens at lg/xl via
+   the --container-app media queries above. Use with `mx-auto`. */
+.container-app {
+  max-width: var(--container-app);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Active feedback on every tappable thing (apple-design §1). */

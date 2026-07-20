@@ -21,7 +21,7 @@ export default async function AppLayout({
 
       {/* Translucent bottom tab bar (apple-design §12 — material chrome). */}
       <nav className="fixed bottom-0 inset-x-0 z-30 material border-t border-separator pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-md mx-auto grid grid-cols-3">
+        <div className="container-app grid grid-cols-3">
           <TabLink href="/" label="تقویم" icon={CalendarDaysIcon} />
           <TabLink href="/customers" label="مشتریان" icon={UsersIcon} />
           <TabLink href="/settings" label="تنظیمات" icon={Cog6ToothIcon} />

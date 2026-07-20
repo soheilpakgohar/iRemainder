@@ -2,6 +2,7 @@ import {
   getUnpaidDueCounts,
   getTodaysActionList,
   currentJalaliYear,
+  currentJalaliMonth,
 } from "@/lib/queries";
 import { isoDayKey } from "@/lib/jalali";
 import { prisma } from "@/lib/prisma";
@@ -12,6 +13,7 @@ import { BellIcon } from "@heroicons/react/24/solid";
 
 export default async function HomePage() {
   const year = currentJalaliYear();
+  const month = currentJalaliMonth();
   const [counts, todaysRaw, setting] = await Promise.all([
     getUnpaidDueCounts(year),
     getTodaysActionList(),
@@ -37,7 +39,7 @@ export default async function HomePage() {
         }
       />
 
-      <main className="max-w-md mx-auto px-4 py-5">
+      <main className="container-app px-4 py-5">
         {/* Today's actionable list — pinned above the calendar */}
         <div className="mb-6">
           <TodayList initialItems={todays} />
@@ -46,6 +48,7 @@ export default async function HomePage() {
         {/* Year overview calendar */}
         <YearOverview
           initialYear={year}
+          initialMonth={month}
           initialCounts={counts}
           todayIso={todayIso}
         />

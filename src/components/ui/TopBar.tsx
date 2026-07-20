@@ -17,7 +17,7 @@ export function TopBar({
 }) {
   return (
     <header className="sticky top-0 z-20 material border-b border-separator pt-[env(safe-area-inset-top)]">
-      <div className="max-w-md mx-auto h-14 px-3 flex items-center justify-between gap-2">
+      <div className="container-app h-14 px-3 flex items-center justify-between gap-2">
         <div className="flex-1 min-w-0 flex items-center justify-start gap-2">
           {leading}
           <div className="min-w-0">
