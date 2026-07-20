@@ -24,6 +24,18 @@ export interface SmsContext {
   totalInstallments: number;
 }
 
+/**
+ * The placeholder list, as the single source of truth. Imported by the
+ * Settings UI (to render the hint chips) and available to any preview.
+ */
+export const SMS_PLACEHOLDERS = [
+  "{name}",
+  "{amount}",
+  "{dueDate}",
+  "{installmentNo}",
+  "{totalInstallments}",
+] as const;
+
 /** Substitute placeholders in a template. Leaves unknown ones intact. */
 export function renderSmsBody(template: string, ctx: SmsContext): string {
   const due = formatJalali(ctx.dueDate, "D MMMM YYYY");

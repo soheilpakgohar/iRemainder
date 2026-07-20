@@ -16,18 +16,34 @@ async function main() {
   await prisma.installment.deleteMany();
   await prisma.plan.deleteMany();
   await prisma.customer.deleteMany();
-  await prisma.setting.deleteMany();
+  await prisma.smsTemplate.deleteMany();
 
-  // SMS template singleton.
-  await prisma.setting.upsert({
-    where: { id: "singleton" },
-    update: {},
-    create: {
-      id: "singleton",
-      smsTemplate:
-        "سلام {name} عزیز، قسط شماره {installmentNo} از {totalInstallments} به مبلغ {amount} سررسید شده است. لطفًاً پرداخت فرمایید. با تشکر، فروشگاه.",
+  // SMS templates — three starters so the picker isn't empty on first run.
+  // The operator can add/edit/delete in Settings. Exactly one isDefault.
+  const templates = [
+    {
+      name: "یادآور سررسید",
+      body: "سلام {name} عزیز، قسط شماره {installmentNo} از {totalInstallments} به مبلغ {amount} سررسید شده است. لطفًاً پرداخت فرمایید. با تشکر، فروشگاه.",
+      isDefault: true,
+      order: 0,
     },
-  });
+    {
+      name: "محترمانه - تأخیر",
+      body: "سلام {name} گرامی، قسط شماره {installmentNo} از {totalInstallments} به مبلغ {amount} با تأخیر مواجه شده است. خواهشمندیم در اسرع وقت پرداخت فرمایید. سپاسگزاریم.",
+      isDefault: false,
+      order: 1,
+    },
+    {
+      name: "یادآور کوتاه",
+      body: "{name} عزیز، قسط {installmentNo}/{totalInstallments} به مبلغ {amount} سررسید شده. لطفًاً پرداخت کنید.",
+      isDefault: false,
+      order: 2,
+    },
+  ];
+  for (const t of templates) {
+    await prisma.smsTemplate.create({ data: t });
+  }
+  console.log(`  ✓ ${templates.length} SMS templates`);
 
   const today = dayjs().startOf("day").hour(12);
 

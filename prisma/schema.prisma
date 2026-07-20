@@ -72,3 +72,19 @@ model Setting {
   smsTemplate String
   updatedAt   DateTime @updatedAt
 }
+
+// SMS templates the operator can choose between at send time. One (and only
+// one) is marked isDefault = true — the picker pre-selects it. `order` is a
+// manual sort key for the Settings list and the picker.
+model SmsTemplate {
+  id        String   @id @default(cuid())
+  name      String // short label, e.g. "یادآور سررسید"
+  body      String // template text with {placeholders}
+  isDefault Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+

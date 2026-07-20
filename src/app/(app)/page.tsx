@@ -5,7 +5,7 @@ import {
   currentJalaliMonth,
 } from "@/lib/queries";
 import { isoDayKey } from "@/lib/jalali";
-import { prisma } from "@/lib/prisma";
+import { getSmsTemplates } from "@/app/actions/settings";
 import { TopBar } from "@/components/ui/TopBar";
 import { YearOverview } from "@/components/calendar/YearOverview";
 import { TodayList } from "@/components/calendar/TodayList";
@@ -14,14 +14,13 @@ import { BellIcon } from "@heroicons/react/24/solid";
 export default async function HomePage() {
   const year = currentJalaliYear();
   const month = currentJalaliMonth();
-  const [counts, todaysRaw, setting] = await Promise.all([
+  // Fetch counts, today's action list, and SMS templates in parallel.
+  // Templates are passed to TodayList once (not stamped per-row).
+  const [counts, todays, templates] = await Promise.all([
     getUnpaidDueCounts(year),
     getTodaysActionList(),
-    prisma.setting.findUnique({ where: { id: "singleton" } }),
+    getSmsTemplates(),
   ]);
-  const smsTemplate = setting?.smsTemplate ?? "";
-  // Attach the SMS template to each row for the TodayList.
-  const todays = todaysRaw.map((r) => ({ ...r, smsTemplate }));
   const todayIso = isoDayKey(new Date());
 
   return (
@@ -42,7 +41,7 @@ export default async function HomePage() {
       <main className="container-app px-4 py-5">
         {/* Today's actionable list — pinned above the calendar */}
         <div className="mb-6">
-          <TodayList initialItems={todays} />
+          <TodayList initialItems={todays} templates={templates} />
         </div>
 
         {/* Year overview calendar */}

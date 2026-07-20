@@ -12,10 +12,12 @@ import { toPersianDigits, formatJalali } from "@/lib/jalali";
 import { fetchDayAction, togglePaidAction } from "@/app/actions/installments";
 import type { InstallmentWithRelations } from "@/lib/queries";
 import { InstallmentRow } from "@/components/InstallmentRow";
+import { TemplatePicker } from "@/components/sms/TemplatePicker";
+import { renderSmsBody, smsUri, type SmsContext } from "@/lib/sms";
+import type { SmsTemplate } from "@prisma/client";
 
 type DayItem = InstallmentWithRelations & {
   daysLate: number;
-  smsTemplate: string;
 };
 
 /**
@@ -29,6 +31,10 @@ type DayItem = InstallmentWithRelations & {
  *
  * Data is fetched via a server action when the sheet opens. Paid toggles
  * are optimistic — UI flips instantly, server reconciles.
+ *
+ * The SMS button opens a shared TemplatePicker (one picker for all rows);
+ * picking a template renders its body with the row's context and opens the
+ * native SMS app.
  */
 export function DaySheet({
   iso,
@@ -40,6 +46,7 @@ export function DaySheet({
   onPaidChange: (iso: string, becamePaid: boolean) => void;
 }) {
   const [items, setItems] = useState<DayItem[]>([]);
+  const [templates, setTemplates] = useState<SmsTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [pending, startTransition] = useTransition();
   const [optimisticPaid, setOptimisticPaid] = useOptimistic<
@@ -47,7 +54,10 @@ export function DaySheet({
     { id: string; paid: boolean }
   >({}, (state, action) => ({ ...state, [action.id]: action.paid }));
 
-  // Fetch the day's data when the sheet opens.
+  // The item the SMS picker is currently open for (null = picker closed).
+  const [smsPickerFor, setSmsPickerFor] = useState<DayItem | null>(null);
+
+  // Fetch the day's data + templates when the sheet opens.
   useEffect(() => {
     if (!iso) {
       setItems([]);
@@ -56,8 +66,11 @@ export function DaySheet({
     let cancelled = false;
     setLoading(true);
     fetchDayAction(iso)
-      .then(({ items }) => {
-        if (!cancelled) setItems(items);
+      .then(({ items, templates }) => {
+        if (!cancelled) {
+          setItems(items);
+          setTemplates(templates);
+        }
       })
       .finally(() => !cancelled && setLoading(false));
     return () => {
@@ -109,6 +122,21 @@ export function DaySheet({
       if (iso) onPaidChange(iso, newPaid);
     });
   };
+
+  // Send: pick a template, render it with this item's context, open SMS app.
+  const handleSendSms = (item: DayItem, body: string) => {
+    const ctx: SmsContext = {
+      name: item.plan.customer.fullName,
+      amount: item.amount,
+      dueDate: item.dueDate,
+      installmentNo: item.number,
+      totalInstallments: item.plan.installmentsCount,
+    };
+    window.location.href = smsUri(item.plan.customer.phone, renderSmsBody(body, ctx));
+  };
+
+  // The default template id (so the picker pre-highlights it).
+  const defaultTemplateId = templates.find((t) => t.isDefault)?.id;
 
   return (
     <AnimatePresence>
@@ -189,9 +217,9 @@ export function DaySheet({
                       <InstallmentRow
                         item={item}
                         daysLate={item.daysLate}
-                        smsTemplate={item.smsTemplate}
                         optimisticPaid={optimisticPaid[item.id]}
                         pending={pending}
+                        onOpenSmsPicker={() => setSmsPickerFor(item)}
                         onToggle={() => handleToggle(item)}
                       />
                     </li>
@@ -202,6 +230,17 @@ export function DaySheet({
           </motion.div>
         </div>
       )}
+
+      {/* SMS template picker — shared by all rows in this sheet. */}
+      <TemplatePicker
+        open={smsPickerFor !== null}
+        templates={templates}
+        defaultId={defaultTemplateId}
+        onPick={(body) => {
+          if (smsPickerFor) handleSendSms(smsPickerFor, body);
+        }}
+        onClose={() => setSmsPickerFor(null)}
+      />
     </AnimatePresence>
   );
 }

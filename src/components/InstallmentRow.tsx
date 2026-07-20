@@ -9,45 +9,37 @@ import {
   formatRial,
   toPersianDigits,
 } from "@/lib/jalali";
-import { smsUri, renderSmsBody, type SmsContext } from "@/lib/sms";
 import type { InstallmentWithRelations } from "@/lib/queries";
 
 /**
  * One installment row inside the day sheet.
  * Shows customer name, phone, installment no/total, amount.
- * Actions: Call (tel:), SMS (predefined template), Paid toggle.
+ * Actions: Call (tel:), SMS (opens the template picker in the parent),
+ * Paid toggle.
  *
  * `optimisticPaid` (if set) overrides `item.paid` for instant UI feedback.
+ *
+ * The SMS button no longer sends directly — it asks the parent (DaySheet) to
+ * open the shared TemplatePicker, then the parent renders the chosen body
+ * and opens the native SMS app. This keeps one picker for the whole sheet.
  */
 export function InstallmentRow({
   item,
   optimisticPaid,
   daysLate = 0,
-  smsTemplate,
+  onOpenSmsPicker,
   onToggle,
   pending,
 }: {
   item: InstallmentWithRelations;
   optimisticPaid?: boolean;
   daysLate?: number;
-  smsTemplate?: string;
+  onOpenSmsPicker: () => void;
   onToggle: () => void;
   pending?: boolean;
 }) {
   const paid = optimisticPaid ?? item.paid;
   const customer = item.plan.customer;
-
-  const handleSms = () => {
-    const ctx: SmsContext = {
-      name: customer.fullName,
-      amount: item.amount,
-      dueDate: item.dueDate,
-      installmentNo: item.number,
-      totalInstallments: item.plan.installmentsCount,
-    };
-    const body = renderSmsBody(smsTemplate ?? "", ctx);
-    window.location.href = smsUri(customer.phone, body);
-  };
 
   return (
     <div
@@ -92,7 +84,7 @@ export function InstallmentRow({
 
       <div className="flex items-center gap-2 mt-3">
         <button
-          onClick={handleSms}
+          onClick={onOpenSmsPicker}
           className="pressable flex-1 h-9 inline-flex items-center justify-center gap-1.5 rounded-[10px] bg-surface-sunken text-[13px] font-medium text-fg-secondary"
         >
           <ChatBubbleLeftRightIcon className="w-4 h-4" />

@@ -9,22 +9,36 @@ import {
 } from "@/lib/jalali";
 import { smsUri, renderSmsBody, type SmsContext } from "@/lib/sms";
 import { togglePaidAction } from "@/app/actions/installments";
+import { TemplatePicker } from "@/components/sms/TemplatePicker";
 import type { InstallmentWithRelations } from "@/lib/queries";
+import type { SmsTemplate } from "@prisma/client";
 
-type Item = InstallmentWithRelations & { daysLate: number; smsTemplate: string };
+type Item = InstallmentWithRelations & { daysLate: number };
 
 /**
  * Today's actionable list — pinned above the calendar on the home page.
  * Shows every unpaid installment due today or earlier (most overdue first),
  * with the same Call / SMS / Paid actions as the day sheet.
+ *
+ * The SMS button opens the shared TemplatePicker; picking a template renders
+ * its body with the row's context and opens the native SMS app. Templates
+ * are passed in once from the server (not per-row).
  */
-export function TodayList({ initialItems }: { initialItems: Item[] }) {
+export function TodayList({
+  initialItems,
+  templates,
+}: {
+  initialItems: Item[];
+  templates: SmsTemplate[];
+}) {
   const [items, setItems] = useState(initialItems);
   const [pending, startTransition] = useTransition();
   const [removed, removeOptimistic] = useOptimistic<string[], string>(
     [],
     (_state, id) => [..._state, id],
   );
+  // The item the SMS picker is currently open for (null = closed).
+  const [smsPickerFor, setSmsPickerFor] = useState<Item | null>(null);
 
   const handleToggle = (item: Item) => {
     startTransition(async () => {
@@ -36,7 +50,7 @@ export function TodayList({ initialItems }: { initialItems: Item[] }) {
     });
   };
 
-  const handleSms = (item: Item) => {
+  const handleSendSms = (item: Item, body: string) => {
     const ctx: SmsContext = {
       name: item.plan.customer.fullName,
       amount: item.amount,
@@ -46,9 +60,11 @@ export function TodayList({ initialItems }: { initialItems: Item[] }) {
     };
     window.location.href = smsUri(
       item.plan.customer.phone,
-      renderSmsBody(item.smsTemplate, ctx),
+      renderSmsBody(body, ctx),
     );
   };
+
+  const defaultTemplateId = templates.find((t) => t.isDefault)?.id;
 
   if (items.length === 0) {
     return (
@@ -122,7 +138,7 @@ export function TodayList({ initialItems }: { initialItems: Item[] }) {
                   تماس
                 </a>
                 <button
-                  onClick={() => handleSms(item)}
+                  onClick={() => setSmsPickerFor(item)}
                   className="pressable flex-1 h-8 inline-flex items-center justify-center gap-1 rounded-[8px] bg-surface-sunken text-[12px] font-medium text-fg-secondary"
                 >
                   پیامک
@@ -138,6 +154,17 @@ export function TodayList({ initialItems }: { initialItems: Item[] }) {
             </li>
           ))}
       </ul>
+
+      {/* SMS template picker — shared by all rows in this list. */}
+      <TemplatePicker
+        open={smsPickerFor !== null}
+        templates={templates}
+        defaultId={defaultTemplateId}
+        onPick={(body) => {
+          if (smsPickerFor) handleSendSms(smsPickerFor, body);
+        }}
+        onClose={() => setSmsPickerFor(null)}
+      />
     </div>
   );
 }
