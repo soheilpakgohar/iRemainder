@@ -100,9 +100,34 @@ export function YearOverview({
   // React 19's rule that useOptimistic updates run inside a transition/action.
   const [, startDotTransition] = useTransition();
 
+  // Apply the dot-count change to the real base state (countsByYear).
+  // This is essential: useOptimistic REVERTS to its base when the transition
+  // ends, so unless we persist the decrement into countsByYear, the dot
+  // disappears optimistically then reappears on revert.
+  const persistCountChange = (iso: string, becamePaid: boolean) => {
+    setCountsByYear((prev) => {
+      const current = prev[year];
+      if (!current) return prev;
+      const next = new Map(current);
+      const cur = next.get(iso) ?? 0;
+      if (becamePaid) {
+        if (cur <= 1) next.delete(iso);
+        else next.set(iso, cur - 1);
+      } else {
+        next.set(iso, cur + 1);
+      }
+      return { ...prev, [year]: next };
+    });
+  };
+
   // Called by DaySheet after a successful paid toggle.
   const handlePaidChange = (iso: string, becamePaid: boolean) => {
-    if (becamePaid) startDotTransition(() => mutateOptimistic({ iso }));
+    if (!becamePaid) return;
+    // 1. Apply to the real base state so the change survives the optimistic revert.
+    persistCountChange(iso, becamePaid);
+    // 2. Apply optimistically so the dot disappears instantly, before the
+    //    state update above repaints.
+    startDotTransition(() => mutateOptimistic({ iso }));
   };
 
   const monthLabel = PERSIAN_MONTHS[month];
