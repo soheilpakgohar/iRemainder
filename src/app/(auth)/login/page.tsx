@@ -69,9 +69,8 @@ function LoginForm() {
         </form>
 
         <p className="text-center text-[12px] text-fg-tertiary mt-6 leading-relaxed">
-          رمز پیش‌فرض نسخهٔ توسعه: admin123
+          توسعه توسط گروه سام
           <br />
-          (در نسخه نهایی تغییر دهید)
         </p>
       </div>
     </main>

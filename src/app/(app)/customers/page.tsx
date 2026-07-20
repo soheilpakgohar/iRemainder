@@ -41,7 +41,7 @@ export default async function CustomersPage({
     <>
       <TopBar title="مشتریان" />
 
-      <main className="max-w-md mx-auto px-4 py-5">
+      <main className="container-app mx-auto px-4 py-5">
         {/* Search */}
         <form action="/customers" className="mb-4">
           <input
@@ -68,7 +68,7 @@ export default async function CustomersPage({
             {query ? "نتیجه‌ای یافت نشد" : "هنوز مشتری‌ای ثبت نشده است"}
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {customers.map((c) => {
               const remaining = c.plans.reduce(
                 (sum, p) => sum + p.installments.reduce((s, i) => s + i.amount, 0),
@@ -79,10 +79,10 @@ export default async function CustomersPage({
                 0,
               );
               return (
-                <li key={c.id}>
+                <li key={c.id} className="h-full">
                   <Link
                     href={`/customers/${c.id}`}
-                    className="pressable block rounded-card bg-surface-elevated border border-separator p-3"
+                    className="pressable block h-full rounded-card bg-surface-elevated border border-separator p-3"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">

@@ -139,9 +139,12 @@ export function DaySheet({
   const defaultTemplateId = templates.find((t) => t.isDefault)?.id;
 
   return (
-    <AnimatePresence>
-      {iso && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <>
+      {/* The day sheet itself. AnimatePresence only owns THIS one child so
+         exit animations track cleanly (no key collisions). */}
+      <AnimatePresence>
+        {iso && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
           {/* Dimming scrim (apple-design §12). */}
           <motion.div
             className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
@@ -230,8 +233,11 @@ export function DaySheet({
           </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
-      {/* SMS template picker — shared by all rows in this sheet. */}
+      {/* SMS template picker — a SEPARATE overlay (its own AnimatePresence
+         lives inside TemplatePicker). Kept outside the sheet's AnimatePresence
+         so it isn't tracked as a sibling child (which caused a key collision). */}
       <TemplatePicker
         open={smsPickerFor !== null}
         templates={templates}
@@ -241,6 +247,6 @@ export function DaySheet({
         }}
         onClose={() => setSmsPickerFor(null)}
       />
-    </AnimatePresence>
+    </>
   );
 }

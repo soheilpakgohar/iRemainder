@@ -63,7 +63,8 @@ export function SettingsContent({
             </div>
           </div>
 
-          <div className="space-y-3">
+          {/* Template cards: single column on mobile, 2 cols on md, 3 on xl. */}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
             {initialTemplates.map((t) => (
               <TemplateCard
                 key={t.id}

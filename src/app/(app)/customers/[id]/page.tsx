@@ -43,7 +43,7 @@ export default async function CustomerDetailPage({
         }
       />
 
-      <main className="max-w-md mx-auto px-4 py-5 space-y-5">
+      <main className="container-app mx-auto px-4 py-5 space-y-5">
         {/* Contact card */}
         <section className="rounded-card bg-surface-elevated border border-separator p-4">
           <h2 className="text-[17px] font-bold mb-1">{customer.fullName}</h2>
@@ -76,7 +76,10 @@ export default async function CustomerDetailPage({
                 </span>
               </div>
 
-              <ul className="rounded-card bg-surface-elevated border border-separator divide-y divide-separator overflow-hidden">
+              {/* Installment list: single column with row dividers on mobile
+                  (`divide-y` on the wrapper), 2-column grid on md+ where each
+                  cell carries its own border for clean separation. */}
+              <ul className="grid grid-cols-1 md:grid-cols-2 rounded-card bg-surface-elevated overflow-hidden border border-separator divide-y divide-separator md:divide-y-0">
                 {plan.installments.map((it) => {
                   const late = !it.paid
                     ? daysBetween(new Date(), it.dueDate)
@@ -86,6 +89,9 @@ export default async function CustomerDetailPage({
                       key={it.id}
                       className={[
                         "flex items-center justify-between gap-3 px-3 py-3",
+                        // md+: per-cell border so the 2-col grid has clean dividers.
+                        "md:border-b md:border-separator md:[&:nth-last-child(-n+2)]:md:border-b-0",
+                        "md:border-l md:border-separator md:[&:nth-child(odd)]:md:border-l-0",
                         it.paid ? "opacity-55" : "",
                       ].join(" ")}
                     >

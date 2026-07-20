@@ -69,8 +69,8 @@ export function NewPlanForm() {
         }
       />
 
-      <main className="max-w-md mx-auto px-4 py-5">
-        <form action={formAction} className="space-y-4">
+      <main className="container-app mx-auto px-4 py-5">
+        <form action={formAction} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="نام کامل" htmlFor="fullName" error={fe.fullName}>
             <input
               id="fullName"
@@ -159,7 +159,7 @@ export function NewPlanForm() {
 
           {/* Live preview */}
           {preview && preview.length > 0 && (
-            <div className="rounded-card bg-surface-sunken p-3">
+            <div className="md:col-span-2 rounded-card bg-surface-sunken p-3">
               <p className="text-[12px] font-semibold text-fg-secondary mb-2">
                 پیش‌نمایش اقساط:
               </p>
@@ -188,12 +188,14 @@ export function NewPlanForm() {
           )}
 
           {state.error && (
-            <p role="alert" className="text-[13px] text-danger">
+            <p role="alert" className="md:col-span-2 text-[13px] text-danger">
               {state.error}
             </p>
           )}
 
-          <SubmitButton />
+          <div className="md:col-span-2">
+            <SubmitButton />
+          </div>
         </form>
       </main>
     </>
