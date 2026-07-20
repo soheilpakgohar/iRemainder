@@ -95,8 +95,9 @@ export function DaySheet({
 
   const handleToggle = (item: DayItem) => {
     const newPaid = !(optimisticPaid[item.id] ?? item.paid);
-    setOptimisticPaid({ id: item.id, paid: newPaid });
     startTransition(async () => {
+      // Optimistic update MUST live inside the transition (React 19 rule).
+      setOptimisticPaid({ id: item.id, paid: newPaid });
       await togglePaidAction(item.id, newPaid);
       setItems((prev) =>
         prev.map((it) =>

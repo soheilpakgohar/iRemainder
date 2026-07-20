@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useOptimistic, useEffect, useCallback } from "react";
+import { useState, useOptimistic, useEffect, useCallback, useTransition } from "react";
 import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/solid";
 import { MiniMonth } from "./MiniMonth";
 import { DaySheet } from "./DaySheet";
@@ -86,17 +86,32 @@ export function YearOverview({
     });
   }, []);
 
+  // Step by one year (desktop: the grid shows all 12 months, so year-step is
+  // the meaningful navigation there). Resets the mobile month pointer to the
+  // current month so the single-month view doesn't land on an odd offset.
+  const goToYear = useCallback((delta: number) => {
+    setYear((y) => y + delta);
+    setMonth(initialMonth);
+  }, [initialMonth]);
+
+  // Dot-removal transition. DaySheet calls onPaidChange from inside its own
+  // transition, but the async boundary can drop the transition context — so
+  // wrap the optimistic dot decrement in our own transition to satisfy
+  // React 19's rule that useOptimistic updates run inside a transition/action.
+  const [, startDotTransition] = useTransition();
+
   // Called by DaySheet after a successful paid toggle.
   const handlePaidChange = (iso: string, becamePaid: boolean) => {
-    if (becamePaid) mutateOptimistic({ iso });
+    if (becamePaid) startDotTransition(() => mutateOptimistic({ iso }));
   };
 
   const monthLabel = PERSIAN_MONTHS[month];
 
   return (
     <>
-      {/* Month + year nav (mobile shows this prominently as the single-month header) */}
-      <div className="flex items-center justify-between gap-2 mb-4">
+      {/* Mobile nav: step by MONTH (single-month view).
+          Hidden on md+ where the year grid makes month-step pointless. */}
+      <div className="md:hidden flex items-center justify-between gap-2 mb-4">
         <button
           onClick={() => goToMonth(-1)}
           className="pressable p-2 -m-2 text-fg-tertiary"
@@ -105,7 +120,7 @@ export function YearOverview({
           <ChevronRightIcon className="w-6 h-6" />
         </button>
         <div className="text-center min-w-0">
-          <div className="text-[20px] md:text-[18px] font-bold display leading-tight my-1.5">
+          <div className="text-[20px] font-bold display leading-tight my-1.5">
             {monthLabel}
           </div>
           <div className="text-[13px] text-fg-tertiary leading-tight">
@@ -118,6 +133,28 @@ export function YearOverview({
           aria-label="ماه بعد"
         >
           <ChevronLeftIcon className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* Desktop nav: step by YEAR (12-month grid view).
+          Hidden on mobile where single-month stepping applies. */}
+      <div className="hidden md:flex items-center justify-center gap-6 mb-4">
+        <button
+          onClick={() => goToYear(-1)}
+          className="pressable p-2 -m-2 text-fg-tertiary"
+          aria-label="سال قبل"
+        >
+          <ChevronRightIcon className="w-5 h-5" />
+        </button>
+        <span className="text-[22px] font-bold display min-w-[3ch] text-center">
+          {toPersianDigits(year)}
+        </span>
+        <button
+          onClick={() => goToYear(1)}
+          className="pressable p-2 -m-2 text-fg-tertiary"
+          aria-label="سال بعد"
+        >
+          <ChevronLeftIcon className="w-5 h-5" />
         </button>
       </div>
 

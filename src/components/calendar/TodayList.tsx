@@ -27,9 +27,10 @@ export function TodayList({ initialItems }: { initialItems: Item[] }) {
   );
 
   const handleToggle = (item: Item) => {
-    // Marking paid removes it from the "needs action" list.
-    removeOptimistic(item.id);
     startTransition(async () => {
+      // Optimistic update MUST live inside the transition (React 19 rule).
+      // Marking paid removes it from the "needs action" list.
+      removeOptimistic(item.id);
       await togglePaidAction(item.id, true);
       setItems((prev) => prev.filter((it) => it.id !== item.id));
     });
