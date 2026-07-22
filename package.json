@@ -17,8 +17,6 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
-    "@neondatabase/serverless": "^1.1.0",
-    "@prisma/adapter-neon": "^7.9.0",
     "@prisma/client": "^6.19.3",
     "dayjs": "^1.11.21",
     "iron-session": "^8.0.4",
