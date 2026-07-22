@@ -37,7 +37,7 @@ export function generateInstallments(args: {
   for (let i = 0; i < count; i++) {
     out.push({
       number: i + 1,
-      dueDate: start.add(i * intervalDays, "day").toDate(),
+      dueDate: start.add(i, "month").toDate(),
       amount: base + (i < remainder ? 1 : 0),
     });
   }
