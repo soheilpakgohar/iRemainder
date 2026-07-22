@@ -1,4 +1,4 @@
-import { neon } from "@neondatabase/serverless";
+import { Pool } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 
@@ -9,11 +9,12 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  // In Vercel production, use the Neon serverless driver over WebSockets.
+  // In Vercel production, use the Neon serverless Pool with the
+  // PrismaNeon adapter (WebSocket transport — no TCP needed).
   // Locally, Prisma's built-in connection pool over TCP works fine.
   if (process.env.NODE_ENV === "production") {
-    const sql = neon(process.env.DATABASE_URL!);
-    const adapter = new PrismaNeon(sql);
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+    const adapter = new PrismaNeon(pool);
     return new PrismaClient({ adapter } as never);
   }
 
