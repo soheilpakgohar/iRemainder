@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRightIcon, PhoneIcon, CheckCircleIcon } from "@heroicons/react/24/solid";
 import { TopBar } from "@/components/ui/TopBar";
+import { DeleteCustomerButton } from "@/components/customers/DeleteCustomerButton";
 import { requireOperator } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toPersianDigits, formatRial, formatJalali } from "@/lib/jalali";
@@ -135,6 +136,12 @@ export default async function CustomerDetailPage({
             </section>
           );
         })}
+
+        {/* Delete customer — destructive, full cascade. Kept at the bottom
+            behind a confirmation dialog so it can't be tapped by accident. */}
+        <div className="pt-4 border-t border-separator">
+          <DeleteCustomerButton id={customer.id} fullName={customer.fullName} />
+        </div>
       </main>
     </>
   );
