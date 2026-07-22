@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding iRemainder…");
 
-  // Wipe (dev convenience — safe because this is a local-only SQLite file).
+  // Wipe (dev convenience — only run against a disposable dev database).
   await prisma.installment.deleteMany();
   await prisma.plan.deleteMany();
   await prisma.customer.deleteMany();
