@@ -24,7 +24,7 @@ const iranSansX = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "اقسات‌یار | Installment Reminder",
+  title: "اقساط یار | Installment Reminder",
   description: "یادآور سررسید اقساط فروشگاهی",
 };
 
